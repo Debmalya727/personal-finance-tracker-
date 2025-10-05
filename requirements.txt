@@ -1,0 +1,41 @@
+# AI/ML Libraries - CPU Versions
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+easyocr
+transformers
+accelerate
+prophet
+scikit-learn
+pandas
+numpy
+opencv-python
+regex
+sentencepiece
+google-generativeai
+
+# Flask & Web App Libraries
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-Migrate
+Flask-WTF
+gunicorn
+Werkzeug
+python-dotenv
+cloudinary
+
+# Database & Connectivity
+PyMySQL
+psycopg2-binary
+requests
+
+# Other Utilities
+cryptography
+python-dateutil
+yfinance
+pycoingecko
+joblib
+fpdf2
+Pillow

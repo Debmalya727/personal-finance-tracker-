@@ -1,0 +1,28 @@
+0000000000000000000000000000000000000000 cf65c2a805fc5e606375311fd19a7c3f721e6c96 Debmalya727 <debmalyap229@gmail.com> 1755419307 +0530	commit (initial): Initial commit: Complete personal finance tracker application
+cf65c2a805fc5e606375311fd19a7c3f721e6c96 590f631f6da4b071777e16ab0b1a72a2a42dcfbd Debmalya727 <debmalyap229@gmail.com> 1755429827 +0530	commit: Fix deployment start command and update requirements
+590f631f6da4b071777e16ab0b1a72a2a42dcfbd 4fc95e306360c3ce3b1056e48590f9bdd9dd0281 Debmalya727 <debmalyap229@gmail.com> 1755431138 +0530	commit: Fix deployment start command and update requirements
+4fc95e306360c3ce3b1056e48590f9bdd9dd0281 51fe425f51c11cb127ef0dcc64124580e66d1c63 Debmalya727 <debmalyap229@gmail.com> 1755431298 +0530	commit: Add Flask-Migrate for automated database deployment
+51fe425f51c11cb127ef0dcc64124580e66d1c63 5e30cdfe19c4736a647f8ed4690516cb82c2ef01 Debmalya727 <debmalyap229@gmail.com> 1755431882 +0530	commit: Initial commit: Complete personal finance tracker application
+5e30cdfe19c4736a647f8ed4690516cb82c2ef01 ebc7b8d04e009bbff2f325f8bb17518acef8057a Debmalya727 <debmalyap229@gmail.com> 1755587422 +0530	commit: Initial commit - Flask Finance App
+ebc7b8d04e009bbff2f325f8bb17518acef8057a 0000000000000000000000000000000000000000 Debmalya727 <debmalyap229@gmail.com> 1755587658 +0530	Branch: renamed refs/heads/master to refs/heads/main
+0000000000000000000000000000000000000000 ebc7b8d04e009bbff2f325f8bb17518acef8057a Debmalya727 <debmalyap229@gmail.com> 1755587658 +0530	Branch: renamed refs/heads/master to refs/heads/main
+ebc7b8d04e009bbff2f325f8bb17518acef8057a edff49627a807d81a49e29dceaaeb8115dc41f33 Debmalya727 <debmalyap229@gmail.com> 1755589989 +0530	commit: Initial commit - Flask Finance App
+edff49627a807d81a49e29dceaaeb8115dc41f33 ed1a5fba732df413beb58d114746956bba4d8a7c Debmalya727 <debmalyap229@gmail.com> 1755590025 +0530	commit: Initial commit - Flask Finance App
+ed1a5fba732df413beb58d114746956bba4d8a7c 5c08fa4bc72e7111671e7e059283c794400ab3f2 Debmalya727 <debmalyap229@gmail.com> 1755590054 +0530	pull origin main --rebase (start): checkout 5c08fa4bc72e7111671e7e059283c794400ab3f2
+5c08fa4bc72e7111671e7e059283c794400ab3f2 64e8cd200d2ff39d89cc4779960e0b3da5e2a65e Debmalya727 <debmalyap229@gmail.com> 1755590055 +0530	pull origin main --rebase (pick): Initial commit - Flask Finance App
+64e8cd200d2ff39d89cc4779960e0b3da5e2a65e 18045af1d09dc9bad5b2479ee46ff08e6772045b Debmalya727 <debmalyap229@gmail.com> 1755590055 +0530	pull origin main --rebase (pick): Initial commit - Flask Finance App
+18045af1d09dc9bad5b2479ee46ff08e6772045b 18045af1d09dc9bad5b2479ee46ff08e6772045b Debmalya727 <debmalyap229@gmail.com> 1755590055 +0530	pull origin main --rebase (finish): returning to refs/heads/main
+18045af1d09dc9bad5b2479ee46ff08e6772045b 7b6afd3fcfccff99b6c687f5d97aae9b668e023a Debmalya727 <debmalyap229@gmail.com> 1755591181 +0530	commit: Initial commit - Flask Finance App
+7b6afd3fcfccff99b6c687f5d97aae9b668e023a f129e45b68d4292bdb742e279c1656611ca2fde0 Debmalya727 <debmalyap229@gmail.com> 1759255828 +0530	commit: feat: Implement full budgeting system with Cloudinary integration
+f129e45b68d4292bdb742e279c1656611ca2fde0 ae8b10425f0db83dd7d7976064cabc6421055529 Debmalya727 <debmalyap229@gmail.com> 1759383864 +0530	pull: Fast-forward
+ae8b10425f0db83dd7d7976064cabc6421055529 fccb0701014aae50819a9cf45eb1c4b75bd7ac30 Debmalya727 <debmalyap229@gmail.com> 1759384971 +0530	commit: fix: Add Hugging Face Space configuration to README
+fccb0701014aae50819a9cf45eb1c4b75bd7ac30 cce35070f5789cfe5a68d9b32d42ad90182b3e14 Debmalya727 <debmalyap229@gmail.com> 1759385116 +0530	commit: fix: Correct YAML metadata in README
+cce35070f5789cfe5a68d9b32d42ad90182b3e14 f93e910ebacb394ad6d0c871ddb428fc838c0ce8 Debmalya727 <debmalyap229@gmail.com> 1759386851 +0530	commit: fix: Correct YAML metadata in README
+f93e910ebacb394ad6d0c871ddb428fc838c0ce8 ac158762430e993ff7c904946c07b89be6c7b2a6 Debmalya727 <debmalyap229@gmail.com> 1759387074 +0530	commit: feat: Add Dockerfile
+ac158762430e993ff7c904946c07b89be6c7b2a6 e3783e1c6f8f9183aee27b4cb3351ac5ce917d82 Debmalya727 <debmalyap229@gmail.com> 1759387428 +0530	commit: feat: Add Dockerfile
+e3783e1c6f8f9183aee27b4cb3351ac5ce917d82 0c32959777e43a7c8ff0be1386e29b12238340c7 Debmalya727 <debmalyap229@gmail.com> 1759387529 +0530	commit: fix: Use correct system package name (libgl1)
+0c32959777e43a7c8ff0be1386e29b12238340c7 6d6479c84b288d6990be038d70e9efef6459e08e Debmalya727 <debmalyap229@gmail.com> 1759387764 +0530	commit: fix: Add libgthread system dependency
+6d6479c84b288d6990be038d70e9efef6459e08e 09cc398e749f573af8f19b9f6954fbbeda1f85e7 Debmalya727 <debmalyap229@gmail.com> 1759400975 +0530	commit: Split /login and /register routes + fixed CSRF issue
+09cc398e749f573af8f19b9f6954fbbeda1f85e7 d98bc473a733dfadece7d63f7f2c936741ba9b75 Debmalya727 <debmalyap229@gmail.com> 1759401203 +0530	commit (merge): Merge branch 'main' of origin into main (resolved conflicts)
+d98bc473a733dfadece7d63f7f2c936741ba9b75 f584e1c663d23d2b82e2ff415a0abe5914a71f27 Debmalya727 <debmalyap229@gmail.com> 1759401737 +0530	commit: Merge branch 'main' of origin into main (resolved conflicts)
+f584e1c663d23d2b82e2ff415a0abe5914a71f27 4680d0cbe997eb22f596697f31688d398850a9a2 Debmalya727 <debmalyap229@gmail.com> 1759673485 +0530	commit: Correct .gitignore and prepare for deployment
