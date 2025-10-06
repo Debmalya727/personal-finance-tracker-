@@ -18,10 +18,74 @@ app_port: 7860
 
 This project demonstrates a comprehensive, full-stack web application designed to solve real-world financial tracking challenges through modern technology.
 
+# 📸 Screenshorts
+
 ### **Login/SignUp**
 ![Fin-AI Login/SignUp](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737056/Screenshot_2025-10-06_130600_edot6c.png)
+
+### **Employee Dashboard**
+![Fin-AI Employee Dashboard](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759378/Screenshot_2025-10-06_192736_xvth6a.png)
+
+### **Salary Manager**
+![Fin-AI Salary Manager](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759375/Screenshot_2025-10-06_192816_yhuhdr.png)
+
+### **Add Transaction**
+![Fin-AI Add Transaction](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759381/Screenshot_2025-10-06_192855_r9geft.png)
+
+### **Transaction History**
+![Fin-AI Transaction History](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759377/Screenshot_2025-10-06_192908_wyjbxi.png)
+
+### **Net Worth**
+![Fin-AI Net Worth](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759376/Screenshot_2025-10-06_192832_hixel4.png)
+
+### **Investments**
+![Fin-AI Investments](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759384/Screenshot_2025-10-06_192948_emreuc.png)
+
+### **Fixed Schemes**
+![Fin-AI Fixed Schemes](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759381/Screenshot_2025-10-06_193000_uaheru.png)
+
+### **Loans & EMIs**
+![Fin-AI Loans & EMIs](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759378/Screenshot_2025-10-06_193009_xpjsyu.png)
+
+### **Tax Estimator**
+![Fin-AI Tax Estimator](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759381/Screenshot_2025-10-06_193021_gaeqjb.png)
+
+### **Categories**
+![Fin-AI Categories](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759380/Screenshot_2025-10-06_193029_bwmo2p.png)
+
+### **Reports**
+![Fin-AI Reports](https://res.cloudinary.com/dihgchdvg/image/upload/v1759759381/Screenshot_2025-10-06_193040_k6qv1r.png)
+
 ### **Business Dashboard**
 ![Fin-AI Business Dashboard](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737057/Screenshot_2025-10-06_130614_n18efi.png)
+
+### **Transactions**
+![Fin-AI Transactions](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737057/Screenshot_2025-10-06_130633_p08syr.png)
+
+### **Financials**
+![Fin-AI Financials](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737057/Screenshot_2025-10-06_130736_h3ydzc.png)
+
+### **Investments**
+![Fin-AI Investments](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130746_sj2kcn.png)
+
+### **Clients**
+![Fin-AI Clients](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737057/Screenshot_2025-10-06_130756_graz80.png)
+
+### **AI Insights**
+![Fin-AI AI Insights](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130806_kecjfo.png)
+
+### **Loans**
+![Fin-AI Loans](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130816_xpup2o.png)
+
+### **Categories**
+![Fin-AI Categories](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130828_pguhoh.png)
+
+### **Reports**
+![Fin-AI Reports](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130839_ixhbv4.png)
+
+### **Budget**
+![Fin-AI Budget](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130848_lgilam.png)
+
 
 ---
 
