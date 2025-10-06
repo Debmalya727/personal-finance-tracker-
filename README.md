@@ -18,8 +18,9 @@ app_port: 7860
 
 This project demonstrates a comprehensive, full-stack web application designed to solve real-world financial tracking challenges through modern technology.
 
-
+### **Login/SignUp**
 ![Fin-AI Login/SignUp](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737056/Screenshot_2025-10-06_130600_edot6c.png)
+### **Business Dashboard**
 ![Fin-AI Business Dashboard](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737057/Screenshot_2025-10-06_130614_n18efi.png)
 
 ---
