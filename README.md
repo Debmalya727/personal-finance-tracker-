@@ -252,6 +252,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📧 Contact
 
-Your Name - [@YourTwitter](https://x.com/Debmaly12) - debmalyapanda2004@gmail.com
+Your Name - [@Twitter](https://x.com/Debmaly12) - debmalyapanda2004@gmail.com
 
 Project Link: [https://github.com/your_username/your_project_repo]([https://github.com/your_username/your_project_repo](https://github.com/Debmalya727/personal-finance-tracker-.git))
