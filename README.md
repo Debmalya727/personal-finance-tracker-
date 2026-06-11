@@ -10,15 +10,14 @@ app_port: 7860
 
 # 🤖 Fin-AI: An Intelligent Personal & Business Finance Manager
 
-**An advanced, dual-purpose financial management application built with Flask and Python, leveraging AI for intelligent data extraction and machine learning for proactive financial insights.**
+**An advanced, dual-purpose financial management application built with a modern React SPA frontend and Flask backend, leveraging AI for intelligent data extraction and machine learning for proactive financial insights.**
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/your_username/your_project_repo)
 
-This project demonstrates a comprehensive, full-stack web application designed to solve real-world financial tracking challenges through modern technology.
+This project is a comprehensive, full-stack web application designed to solve real-world personal and business financial tracking challenges through modern technology.
 
-# 📸 Screenshorts
+# 📸 Screenshots
 
 ### **Login/SignUp**
 ![Fin-AI Login/SignUp](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737056/Screenshot_2025-10-06_130600_edot6c.png)
@@ -86,7 +85,6 @@ This project demonstrates a comprehensive, full-stack web application designed t
 ### **Budget**
 ![Fin-AI Budget](https://res.cloudinary.com/dihgchdvg/image/upload/v1759737058/Screenshot_2025-10-06_130848_lgilam.png)
 
-
 ---
 
 ## 🎯 Project Motivation & Problem Statement
@@ -95,152 +93,110 @@ In a market saturated with generic expense trackers, many users still struggle w
 
 This project tackles these problems by:
 1.  **Automating Data Entry:** Utilizing AI to scan and parse receipts, drastically reducing the time and effort required to log transactions.
-2.  **Providing Proactive Insights:** Employing machine learning to detect spending anomalies in real-time, offering a layer of financial security and awareness that most manual trackers lack.
+2.  **Providing Proactive Insights:** Employing machine learning to detect spending anomalies in real-time, offering a layer of financial security and awareness.
 3.  **Serving a Dual Role:** Offering a tailored experience for both personal and business finance within a single, cohesive platform, recognizing that many individuals manage both.
 
-The goal of Fin-AI is to create a smarter, more intuitive financial companion that adapts to the user's habits and provides genuine value beyond simple record-keeping.
-
 ---
 
-## 🏗️ System Architecture
+## ✨ Upgraded Features & Architecture
 
-The application is built on a classic three-tier architecture, designed for scalability and maintainability. External services are integrated to handle specialized tasks like media storage and AI processing.
+The application has been upgraded with a modern SPA (Single Page Application) frontend client and a production-hardened Flask API backend:
 
-[Diagram of the application architecture]
-*(A diagram showing: User -> Browser -> Flask Web Server -> (SQL Database | Cloudinary API | Gemini AI API))*
+### 1. **Client-Side (React 18+ SPA)**
+* **Modern UI Components**: Sleek, responsive layout built using React, Vite, Tailwind CSS, and Lucide React.
+* **Interactive 3D Visualizations**: Real-time asset allocation models using **React Three Fiber (R3F) & Three.js** to display heights of allocation blocks interactively.
+* **Advanced Charting**: High-fidelity chart dashboards built with **Recharts** showing cash flow trends.
+* **Micro-Animations**: Butter-smooth transitions powered by **Framer Motion**.
 
-1.  **Client-Side (Frontend):** A responsive user interface built with HTML, Bootstrap 5, and vanilla JavaScript that runs in the user's browser. It handles user interaction and makes asynchronous calls (AJAX/Fetch) to the backend for dynamic features like receipt scanning.
-2.  **Server-Side (Backend):** A robust Flask application serves as the core of the system. It handles business logic, user authentication, database interactions, and communication with external APIs.
-3.  **Data Layer:**
-    * A relational database (e.g., MySQL) managed by SQLAlchemy ORM stores all core user data, including transactions, categories, budgets, and loans.
-    * **Cloudinary** is used as an object storage service to persistently and securely store all user-uploaded media (receipts), keeping them separate from the application's ephemeral filesystem.
+### 2. **Production-Grade CSRF Protection**
+* Enforced security by implementing a transparent CSRF token verification system.
+* Flask-WTF generates a cryptographically secure token on every response.
+* A client-side fetch interceptor dynamically captures the `csrf_token` cookie and automatically appends it as the `X-CSRFToken` header to all API mutations (`POST`/`PUT`/`PATCH`/`DELETE`).
 
----
-
-## ✨ Features in Detail
-
- 🤖 AI-Powered Receipt Scanner
-This feature revolutionizes transaction entry.
-* **Workflow:** A user uploads a receipt image via the web interface. A client-side JavaScript function sends this image to a dedicated Flask endpoint.
-* **Technology:** The backend uploads the image to **Cloudinary** for persistent storage, receiving a secure URL in return. This image data is then passed to an AI model (e.g., Google Gemini or Donut) which extracts key information like the vendor, total amount, and date.
-* **User Experience:** The extracted data, along with the Cloudinary URL, is sent back to the browser as a JSON response. The JavaScript then automatically populates the fields of the "Add Transaction" form, allowing the user to simply verify the data and click save.
-
- 📈 ML-Powered Anomaly Detection
-To provide proactive financial security, the system includes a custom anomaly detection model.
-* **Model:** A `IsolationForest` model from the Scikit-learn library is trained on a per-user basis using their historical transaction data.
-* **Implementation:** After a new business transaction is saved, it is passed to a `check_transaction_anomaly` function. The function uses the pre-trained model to predict whether the new transaction is an "inlier" (normal) or an "outlier" (unusual).
-* **User Feedback:** If an outlier is detected, a prominent `flash` message is displayed on the dashboard, warning the user of the unusually high transaction and prompting them to review it.
-* **Auto-Retraining:** The model is automatically retrained with fresh data in the background after every 20 new transactions, ensuring it stays up-to-date with the user's evolving spending patterns.
-
- 💰 Smart Budgeting System
-This module empowers users to take control of their spending.
-* **Functionality:** Users can navigate to a dedicated Budget Planner page where all their 'expense' type categories are listed. They can set a monthly spending limit for any or all of these categories.
-* **Visualization:** The system provides real-time feedback with color-coded progress bars (green -> yellow -> red) that show how much of the budget has been consumed. A summary card on the main dashboard gives an at-a-glance overview of the overall budget status.
+### 3. **AI & ML Integration**
+* **Gemini AI Receipt Scan**: Upload receipt images to extract description, amount, date, and category automatically.
+* **Isolation Forest Anomaly Detection**: Per-user outlier detection to flag suspicious, off-trend purchases.
+* **Live Market Rates**: Real-time USD/INR conversions and cryptocurrency price fetches using the CoinGecko API.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### **Backend**
-* **Framework:** Flask
-* **Database:** SQLAlchemy ORM, Flask-SQLAlchemy
+* **Framework:** Flask (Python 3.10+)
+* **ORM:** SQLAlchemy / Flask-SQLAlchemy (relational database target)
 * **Migrations:** Flask-Migrate
-* **Authentication:** Flask-Login
-* **Security:** Flask-WTF (CSRF Protection)
-* **Language:** Python 3.10+
+* **Auth:** Flask-Login
+* **Security:** Flask-WTF (Secure CSRF Token verification)
 
 ### **Frontend**
-* **Templating:** Jinja2
-* **Styling:** Bootstrap 5
-* **Scripting:** Vanilla JavaScript (Fetch API for AJAX)
-
-### **AI & Machine Learning**
-* **ML Library:** Scikit-learn
-* **Cloud Media Storage:** Cloudinary API
-* **AI Data Extraction:** Custom AI Model Integration (Gemini, Donut, etc.)
-
-### **Development & Deployment**
-* **Environment:** Python `venv`
-* **Configuration:** Environment Variables (`.env` files with `python-dotenv`)
+* **Framework:** React 18+ (Vite)
+* **Styling:** Tailwind CSS, Vanilla CSS
+* **Animations:** Framer Motion
+* **Visuals:** React Three Fiber, Three.js, Recharts, Lucide Icons
 
 ---
 
 ## 🚀 Getting Started
 
-To get a local copy up and running, follow these steps.
+To run a local copy of this project:
 
-### **Prerequisites**
-* Python 3.8+
-* A running SQL database (e.g., MySQL, PostgreSQL)
+### **Backend Setup**
+1. Clone the repository and navigate inside:
+   ```bash
+   git clone https://github.com/Debmalya727/personal-finance-tracker-.git
+   cd personal-finance-tracker-
+   ```
+2. Create and activate a Python virtual environment:
+   ```bash
+   python -m venv .venv
+   # Windows:
+   .\.venv\Scripts\activate
+   # macOS/Linux:
+   source .venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configure your `.env` file using the keys from `.env.example`.
 
-### **Installation & Setup**
-1.  Clone the repository:
-    ```bash
-    git clone [https://github.com/your_username/your_project_repo.git](https://github.com/your_username/your_project_repo.git)
-    cd your_project_repo
-    ```
-2.  Create and activate a virtual environment:
-    ```bash
-    # Windows
-    python -m venv .venv
-    .\.venv\Scripts\activate
+### **Frontend Setup**
+1. Navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+   ```
+2. Install Node modules:
+   ```bash
+   npm install
+   ```
+3. Compile and build the React SPA bundle:
+   ```bash
+   npm run build
+   ```
+   *(This outputs the static build files directly into the Flask public static folder, enabling the single-port serving configuration).*
 
-    # macOS/Linux
-    python3 -m venv .venv
-    source .venv/bin/activate
-    ```
-3.  Install the required packages from `requirements.txt`:
-    *(If you don't have this file, create it by running `pip freeze > requirements.txt`)*
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  Configure Environment Variables by creating a `.env` file in the project root:
-    ```env
-    # .env file
-
-    SECRET_KEY='a-very-long-and-random-secret-key'
-    SQLALCHEMY_DATABASE_URI='mysql+pymysql://user:password@hostname/db_name'
-    CLOUDINARY_CLOUD_NAME='your_cloud_name'
-    CLOUDINARY_API_KEY='your_api_key'
-    CLOUDINARY_API_SECRET='your_api_secret'
-    ```
-5.  Initialize and run database migrations:
-    ```bash
-    flask db init  # (Only if you haven't already)
-    flask db migrate -m "Initial database migration."
-    flask db upgrade
-    ```
-6.  Run the application:
-    ```bash
-    flask run
-    ```
+### **Run Application**
+From the root directory, activate your virtual environment and run:
+```bash
+flask run
+```
+Open `http://127.0.0.1:5000` in your web browser.
 
 ---
 
 ## 🗺️ API Endpoints
 
-The application exposes several key endpoints for both web navigation and AJAX calls.
+The Flask server hosts secure REST API routes under the `/api` prefix:
 
-| Method | Endpoint                      | Description                                                  |
-| :----- | :---------------------------- | :----------------------------------------------------------- |
-| GET, POST | `/categories`                | Manages (view, add, delete) user-defined categories.        |
-| GET, POST | `/budget`                    | Manages (view, set) the monthly budget for expense categories. |
-| GET, POST | `/business/transactions`     | View transaction history and add a new business transaction. |
-| POST    | `/process-receipt-accurate`  | AJAX endpoint for the AI to scan a receipt and return JSON data. |
-| GET     | `/dashboard`                 | Displays the personal finance dashboard.                     |
-| GET     | `/business_dashboard`        | Displays the business finance dashboard.                     |
-
----
-
-## 🛣️ Project Roadmap
-
-This project has a solid foundation, but there are many exciting features that could be added in the future:
-
-* [ ] **Advanced Reporting:** Create a dedicated "Reports" page with interactive charts (using Chart.js) for visualizing spending trends, category breakdowns, and net worth over time.
-* [ ] **Recurring Transactions:** Allow users to set up automatic recurring transactions for bills and subscriptions.
-* [ ] **Debt Paydown Calculator:** A tool to help users visualize how extra payments can impact their loan repayment timelines.
-* [ ] **Investment Portfolio Integration:** Connect to a financial API (e.g., Finnhub) to track the real-time value of stock and crypto investments.
-* [ ] **Email Notifications:** Send users weekly summaries or alerts when they are approaching a budget limit.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/dashboard` | Fetches personal monthly stats, balance, and transaction history. |
+| `GET` | `/api/net_worth` | Computes assets (cash, schemes, stocks, crypto) and liabilities. |
+| `POST` | `/api/reports` | Generates detailed PDF/CSV export data within date limits. |
+| `GET` | `/api/business/financials` | Returns business monthly revenue, expenses, and clients data. |
+| `POST` | `/api/auth/login` | Secure session sign-in endpoint. |
+| `POST` | `/api/auth/register` | User signup endpoint. |
 
 ---
 
@@ -252,6 +208,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📧 Contact
 
-Your Name - [@Twitter](https://x.com/Debmaly12) - debmalyapanda2004@gmail.com
+Debmalya Panda - debmalyapanda2004@gmail.com
 
-Project Link: ![GitHub]([https://github.com/your_username/your_project_repo](https://github.com/Debmalya727/personal-finance-tracker-.git))
+Project Link: [https://github.com/Debmalya727/personal-finance-tracker-](https://github.com/Debmalya727/personal-finance-tracker-)
