@@ -165,7 +165,10 @@ app.config.update(
 )
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
+db_uri = os.getenv('DATABASE_URI')
+if db_uri:
+    db_uri = db_uri.strip()
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}

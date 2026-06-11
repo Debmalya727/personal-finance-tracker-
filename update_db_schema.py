@@ -12,11 +12,13 @@ db_uris = {}
 # 1. Local Database
 local_uri = os.getenv("DATABASE_URI")
 if local_uri:
+    local_uri = local_uri.strip()
     db_uris["Local MySQL"] = local_uri
 
 # 2. Clever Cloud Database
 clever_uri = os.getenv("MYSQL_ADDON_URI")
 if clever_uri:
+    clever_uri = clever_uri.strip()
     # Use pymysql driver
     if not clever_uri.startswith("mysql+pymysql://"):
         clever_uri = clever_uri.replace("mysql://", "mysql+pymysql://")
