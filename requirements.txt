@@ -1,19 +1,9 @@
-# AI/ML Libraries - CPU Versions
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-torchaudio
-easyocr
-transformers
-accelerate
-prophet
+# Core ML/Data Libraries (lightweight — no torch/transformers)
 scikit-learn
 pandas
 numpy
-opencv-python
-regex
-sentencepiece
-google-generativeai
+joblib
+plotly
 
 # Flask & Web App Libraries
 Flask
@@ -27,7 +17,6 @@ python-dotenv
 cloudinary
 
 # Database & Connectivity
-PyMySQL
 psycopg2-binary
 requests
 
@@ -36,6 +25,9 @@ cryptography
 python-dateutil
 yfinance
 pycoingecko
-joblib
 fpdf2
 Pillow
+huggingface-hub
+
+# AI APIs (cloud-based, no heavy models needed)
+google-genai

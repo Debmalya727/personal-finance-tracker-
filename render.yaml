@@ -1,0 +1,36 @@
+# render.yaml — One-click Render.com deployment config
+# Push this to GitHub, then connect your repo at https://render.com/new
+
+services:
+  - type: web
+    name: personal-finance-tracker
+    runtime: python
+    region: singapore  # Closest to India
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
+    healthCheckPath: /healthz
+
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+      # Set these in Render dashboard > Environment:
+      - key: DATABASE_URI
+        sync: false   # Set manually in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true  # Render will auto-generate this
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: HF_API_TOKEN
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false

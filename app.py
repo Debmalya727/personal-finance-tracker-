@@ -1,76 +1,166 @@
 # app.py
 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Transaction, FixedScheme, Salary, Investment, SoldInvestment, Loan
+from werkzeug.utils import secure_filename
+from models import (
+    db, User, Transaction, FixedScheme, Salary, Investment, SoldInvestment, Loan,
+    BusinessTransaction, BusinessClient, BusinessInvestment, BusinessLoan,
+    BusinessMetrics, Category, Budget
+)
 from datetime import datetime, date, timedelta
 import json
+import os
+import re
+import io
+import csv
+import uuid
+import traceback
+
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from dateutil.relativedelta import relativedelta
-from dateutil import parser as dateparser # ADDED THIS LINE
+from dateutil import parser as dateparser
+from sqlalchemy import func
+from dotenv import load_dotenv
+
 import yfinance as yf
 from pycoingecko import CoinGeckoAPI
-import os
 import cloudinary
 import cloudinary.uploader
-from dotenv import load_dotenv
-from flask_wtf.csrf import CSRFProtect
+
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
-from sklearn.ensemble import IsolationForest
-from prophet import Prophet
+from sklearn.ensemble import IsolationForest, RandomForestRegressor
 import joblib
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import IsolationForest
-from models import BusinessTransaction
-from models import BusinessClient
-from models import BusinessInvestment
-from models import BusinessLoan
-from models import BusinessMetrics
-from models import Category
-from models import Budget
+
 from fpdf import FPDF
-from flask import Response
-from sqlalchemy import func
-import io
-import csv
-import uuid
-from werkzeug.utils import secure_filename
-from flask import send_from_directory
-import re
-import easyocr
-import json
-from transformers import AutoModelForCausalLM, AutoProcessor, pipeline
 from PIL import Image
 import requests
 from huggingface_hub import InferenceClient
-from huggingface_hub.inference._generated.types import TextGenerationOutput
-from huggingface_hub.utils import HfHubHTTPError
-import traceback
-# NEW: Advanced Document AI Libraries
-from transformers import DonutProcessor, VisionEncoderDecoderModel
-import torch
-# NEW: Local OCR and Parsing Libraries
-import easyocr
-import cv2
-import numpy as np
-import google.generativeai as genai
+from google import genai
+
+# --- CoinGecko Ticker to ID Mapping Cache ---
+COINGECKO_SYMBOL_MAP = {}
+LAST_MAP_FETCH = None
+
+def get_coingecko_id(symbol):
+    global COINGECKO_SYMBOL_MAP, LAST_MAP_FETCH
+    symbol_lower = symbol.lower().strip()
+    
+    # Common cryptos static mapping to avoid API calls completely for them
+    common_map = {
+        'btc': 'bitcoin',
+        'bitcoin': 'bitcoin',
+        'eth': 'ethereum',
+        'ethereum': 'ethereum',
+        'usdt': 'tether',
+        'tether': 'tether',
+        'bnb': 'binancecoin',
+        'sol': 'solana',
+        'solana': 'solana',
+        'xrp': 'ripple',
+        'ada': 'cardano',
+        'cardano': 'cardano',
+        'doge': 'dogecoin',
+        'dogecoin': 'dogecoin',
+        'shib': 'shiba-inu',
+        'avax': 'avalanche-2',
+        'dot': 'polkadot',
+        'matic': 'matic-network',
+        'link': 'chainlink',
+        'trx': 'tron',
+        'ltc': 'litecoin',
+        'near': 'near',
+        'uni': 'uniswap',
+        'bch': 'bitcoin-cash',
+        'etc': 'ethereum-classic',
+        'xlm': 'stellar',
+        'fil': 'filecoin',
+        'ldo': 'lido-dao',
+        'hbar': 'hbar',
+        'apt': 'aptos',
+        'vet': 'vechain',
+        'icp': 'internet-computer',
+        'grt': 'the-graph',
+        'ftm': 'fantom',
+        'theta': 'theta-token',
+        'algo': 'algorand',
+        'imx': 'immutable-x',
+        'stx': 'blockstack',
+        'eos': 'eos',
+        'egld': 'elrond-erd-2',
+        'sand': 'the-sandbox',
+        'mana': 'decentraland',
+        'axs': 'axie-infinity',
+        'aave': 'aave',
+        'flow': 'flow',
+        'chz': 'chiliz',
+        'crv': 'curve-dao-token',
+        'mkr': 'maker',
+        'gala': 'gala',
+        'snx': 'havven',
+        'dydx': 'dydx',
+        'lrc': 'loopring',
+        'enj': 'enjincoin',
+        'bat': 'basic-attention-token',
+        'zil': 'zilliqa',
+        'one': 'harmony',
+        'celo': 'celo',
+        'rvn': 'ravencoin',
+        'waves': 'waves',
+        'dash': 'dash',
+        'zec': 'zcash',
+        'xmr': 'monero',
+    }
+    
+    if symbol_lower in common_map:
+        return common_map[symbol_lower]
+
+    # Fetch from CoinGecko list with cache expiration (1 day)
+    now = datetime.now()
+    if not COINGECKO_SYMBOL_MAP or not LAST_MAP_FETCH or (now - LAST_MAP_FETCH).days >= 1:
+        try:
+            response = requests.get('https://api.coingecko.com/api/v3/coins/list', timeout=5)
+            if response.status_code == 200:
+                coins_list = response.json()
+                new_map = {}
+                for coin in coins_list:
+                    sym = coin['symbol'].lower()
+                    cid = coin['id']
+                    # Keep the shortest ID for conflicts
+                    if sym not in new_map or len(cid) < len(new_map[sym]):
+                        new_map[sym] = cid
+                COINGECKO_SYMBOL_MAP = new_map
+                LAST_MAP_FETCH = now
+        except Exception as e:
+            print(f"Error fetching CoinGecko coins list: {e}")
+            
+    # Check if the symbol_lower is already a valid CoinGecko ID
+    if COINGECKO_SYMBOL_MAP:
+        if symbol_lower in COINGECKO_SYMBOL_MAP.values():
+            return symbol_lower
+        if symbol_lower in COINGECKO_SYMBOL_MAP:
+            return COINGECKO_SYMBOL_MAP[symbol_lower]
+        
+    return symbol_lower
 
 load_dotenv()
 app = Flask(__name__)
 
+# --- Environment Detection ---
+IS_PRODUCTION = os.getenv('FLASK_ENV', 'development') == 'production'
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a-super-secret-key-that-is-long-and-random')
 
-print(f"--- SECRET KEY LOADED: {os.getenv('SECRET_KEY')} ---")
-
 app.config.update(
-    WTF_CSRF_ENABLED=False,
-    SESSION_COOKIE_SECURE=False,   # Spaces runs behind proxy, HTTP is fine
-    SESSION_COOKIE_SAMESITE="Lax", # allows cookies for cross-site form posts
+    WTF_CSRF_ENABLED=True,
+    SESSION_COOKIE_SECURE=IS_PRODUCTION,
+    SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_HTTPONLY=True
 )
 
@@ -88,25 +178,19 @@ cloudinary.config(
   secure=True
 )
 
-# --- Initialize AI Models on Startup (Forced CPU Mode) ---
+# AI runs entirely via Google Gemini cloud API — no local models needed.
 
-# Configure Google Gemini API
+# Configure Google Gemini API Client
+_gemini_client = None
 try:
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    print("Google Gemini AI configured successfully.")
+    _api_key = os.getenv("GOOGLE_API_KEY")
+    if _api_key:
+        _gemini_client = genai.Client(api_key=_api_key)
+        print("Google Gemini AI client configured successfully.")
+    else:
+        print("Warning: GOOGLE_API_KEY not set. Gemini features will be unavailable.")
 except Exception as e:
     print(f"Could not configure Google Gemini AI. Check your GOOGLE_API_KEY. Error: {e}")
-
-print("Initializing Donut Document AI model...")
-donut_processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
-donut_model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
-device = "cpu"
-donut_model.to(device)
-print(f"Donut model initialized and running on {device.upper()}.")
-
-print("Initializing Text Classification model...")
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli", device=-1)
-print("Text Classification model initialized.")
 
 
 def allowed_file(filename):
@@ -119,6 +203,20 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 migrate = Migrate(app, db)
+
+from api import api_bp
+app.register_blueprint(api_bp)
+# Enable CSRF cookie injection on all responses
+@app.after_request
+def set_csrf_cookie(response):
+    response.set_cookie(
+        'csrf_token',
+        generate_csrf(),
+        samesite='Lax',
+        secure=IS_PRODUCTION,
+        httponly=False
+    )
+    return response
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -164,7 +262,6 @@ def calculate_old_regime_tax(gross_income, total_deductions, age):
     total_tax = tax + cess
     return {'regime': 'Old', 'gross_income': gross_income, 'taxable_income': taxable_income, 'total_deductions': total_deductions, 'standard_deduction': standard_deduction, 'income_tax': tax, 'cess': cess, 'total_tax': total_tax}
 
-reader = easyocr.Reader(['en'])
 @app.route('/healthz')
 def healthz():
     return "OK", 200
@@ -178,175 +275,58 @@ def uploaded_file(filename):
     transaction = BusinessTransaction.query.filter_by(receipt_filename=filename, user_id=current_user.id).first_or_404()
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# --- AI Method 1: Google Gemini (Fast, Cloud-based) ---
-@app.route('/process-receipt-fast', methods=['POST'])
+# --- AI Receipt Scanner: Google Gemini (Cloud-based, Fast & Free) ---
+@app.route('/api/process-receipt-fast', methods=['POST'])
 @login_required
 def process_receipt_fast():
     if 'receipt_file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-
     file = request.files['receipt_file']
     if file.filename == '' or not allowed_file(file.filename):
         return jsonify({'error': 'Invalid or no file selected'}), 400
-
     try:
         image = Image.open(file.stream).convert("RGB")
+        if not _gemini_client:
+            return jsonify({'error': 'AI scanner not configured. Please set GOOGLE_API_KEY.'}), 503
+        user_categories = [cat.name for cat in current_user.categories]
+        prompt = f"""
+Analyze this receipt image and extract the following fields:
+- description: the merchant or store name
+- amount: the total amount paid (number only, no currency symbol)
+- date: the transaction date in YYYY-MM-DD format
+- type: either "expense" or "revenue"
+- category_name: best match from this list: {user_categories}
 
-        # --- Try Google Gemini first ---
-        try:
-            model = genai.GenerativeModel("models/gemini-2.5-flash")
-            user_categories = [cat.name for cat in current_user.categories]
-
-            prompt = f"""
-            Analyze this receipt image. Extract:
-            - description (merchant name)
-            - amount (total in numbers only)
-            - date (in YYYY-MM-DD format)
-            - type (expense or revenue)
-            - category_name (best match from this list: {user_categories})
-
-            Return ONLY valid JSON with keys:
-            description, amount, date, type, category_name
-            """
-
-            response = model.generate_content([prompt, image])
-            json_text = response.text.strip().replace("```json", "").replace("```", "")
-            extracted_data = json.loads(json_text)
-
-            # Resolve category to ID
-            category_id = None
-            if extracted_data.get("category_name"):
-                category_obj = Category.query.filter_by(
-                    user_id=current_user.id,
-                    name=extracted_data["category_name"]
-                ).first()
-                if category_obj:
-                    category_id = category_obj.id
-            extracted_data["category_id"] = category_id
-            return jsonify(extracted_data)
-
-        except Exception as gem_error:
-            print(f"Gemini failed, falling back to Donut model: {gem_error}")
-
-        # --- Fallback: Donut Model (local) ---
-        pixel_values = donut_processor(image, return_tensors="pt").pixel_values.to(device)
-
-        task_prompt = (
-            "<s_docvqa>"
-            "<s_question>Extract merchant name, total amount, date, type, and category.</s_question>"
-            "<s_answer>"
+Return ONLY valid JSON with exactly these keys: description, amount, date, type, category_name
+"""
+        response = _gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt, image]
         )
-        decoder_input_ids = donut_processor.tokenizer(
-            task_prompt, add_special_tokens=False, return_tensors="pt"
-        ).input_ids.to(device)
-
-        outputs = donut_model.generate(
-            pixel_values,
-            decoder_input_ids=decoder_input_ids,
-            max_length=donut_model.decoder.config.max_position_embeddings,
-            pad_token_id=donut_processor.tokenizer.pad_token_id,
-            eos_token_id=donut_processor.tokenizer.eos_token_id,
-            use_cache=True,
-            bad_words_ids=[[donut_processor.tokenizer.unk_token_id]],
-            return_dict_in_generate=True
-        )
-
-        sequence = donut_processor.batch_decode(outputs.sequences)[0]
-        match = re.search(r"<s_answer>(.*?)<\/s_answer>", sequence)
-        answer_text = match.group(1).strip() if match else sequence
-
-        # --- Simple Postprocessing ---
-        extracted_data = {
-            "description": answer_text.splitlines()[0] if answer_text else "",
-            "amount": None,
-            "date": None,
-            "type": "expense",
-            "category_name": "other",
-            "category_id": None
-        }
-
-        # Extract Amount
-        amounts = re.findall(r"\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?", answer_text)
-        if amounts:
-            extracted_data["amount"] = float(amounts[-1].replace(",", ""))
-
-        # Extract Date
-        date_match = re.search(r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})", answer_text)
-        if date_match:
-            try:
-                parsed_date = dateparser.parse(date_match.group(0), dayfirst=True).date()
-                extracted_data["date"] = parsed_date.strftime("%Y-%m-%d")
-            except:
-                extracted_data["date"] = None
-
-        # Simple category mapping
-        category_map = {
-            "milk": "groceries", "bread": "groceries", "rice": "groceries", "supermarket": "groceries",
-            "uber": "transport", "ola": "transport", "petrol": "transport", "fuel": "transport",
-            "movie": "entertainment", "cinema": "entertainment", "ticket": "entertainment",
-            "doctor": "healthcare", "hospital": "healthcare", "pharmacy": "healthcare"
-        }
-        desc_text = (extracted_data["description"] or "").lower()
-        for k, v in category_map.items():
-            if k in desc_text:
-                extracted_data["category_name"] = v
-                break
-
-        # Resolve category ID
-        category_obj = Category.query.filter_by(
-            user_id=current_user.id,
-            name=extracted_data["category_name"]
-        ).first()
-        if category_obj:
-            extracted_data["category_id"] = category_obj.id
-
+        json_text = response.text.strip().replace("```json", "").replace("```", "").strip()
+        extracted_data = json.loads(json_text)
+        # Resolve category to ID
+        category_id = None
+        if extracted_data.get("category_name"):
+            category_obj = Category.query.filter_by(
+                user_id=current_user.id,
+                name=extracted_data["category_name"]
+            ).first()
+            if category_obj:
+                category_id = category_obj.id
+        extracted_data["category_id"] = category_id
         return jsonify(extracted_data)
+    except Exception as e:
+        print(f"Error processing receipt with Gemini: {e}")
+        return jsonify({'error': 'AI receipt scan failed. Please try again or enter details manually.'}), 500
 
-    except Exception as final_error:
-        print(f"Error processing receipt: {final_error}")
-        return jsonify({'error': 'An error occurred while processing the receipt.'}), 500
 
-
-# --- AI Method 2: Donut Model (Accurate, Local) ---
-@app.route('/process-receipt-accurate', methods=['POST'])
+# --- AI Method 2: Also uses Gemini (accurate mode) ---
+@app.route('/api/process-receipt-accurate', methods=['POST'])
 @login_required
 def process_receipt_accurate():
-    if 'receipt_file' not in request.files: return jsonify({'error': 'No file part'}), 400
-    file = request.files['receipt_file']
-    if file.filename == '' or not allowed_file(file.filename): return jsonify({'error': 'Invalid or no file selected'}), 400
-    
-    try:
-        image = Image.open(file.stream).convert("RGB")
-        pixel_values = donut_processor(image, return_tensors="pt").pixel_values
-        
-        questions = {
-            "header_text": "What is all the text in the header of the receipt?",
-            "amount": "What is the total amount?",
-            "date": "What is the date of the transaction?",
-            "line_items": "What are all the line items listed on the receipt?"
-        }
-        
-        extracted_data = {}
-        for key, question in questions.items():
-            task_prompt = f"<s_docvqa><s_question>{question}</s_question><s_answer>"
-            decoder_input_ids = donut_processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids
-            outputs = donut_model.generate(
-                pixel_values.to(device), decoder_input_ids=decoder_input_ids.to(device),
-                max_length=donut_model.decoder.config.max_position_embeddings,
-                pad_token_id=donut_processor.tokenizer.pad_token_id, eos_token_id=donut_processor.tokenizer.eos_token_id,
-                use_cache=True, bad_words_ids=[[donut_processor.tokenizer.unk_token_id]], return_dict_in_generate=True,
-            )
-            sequence = donut_processor.batch_decode(outputs.sequences)[0]
-            match = re.search(r"<s_answer>(.*?)<\/s_answer>", sequence)
-            extracted_data[key] = match.group(1).strip() if match else ""
-
-        # (Post-processing and category classification logic for Donut is here)
-        
-        return jsonify(extracted_data)
-
-    except Exception as e:
-        print(f"Error in process_receipt (Donut): {e}")
-        return jsonify({'error': 'An error occurred with the accurate AI scanner.'}), 500
+    """Routes to the same Gemini-powered scanner for consistency."""
+    return process_receipt_fast()
 
 
 @app.route('/business/insights', methods=['GET', 'POST'])
@@ -561,21 +541,31 @@ def delete_category(category_id):
 def dashboard():
     today = date.today()
     start_of_month = today.replace(day=1)
+    end_of_month = start_of_month + relativedelta(months=1)
     
-    # --- YOUR EXISTING SALARY & EMI LOGIC (UNCHANGED) ---
+    # --- SALARY AUTO-CREDIT LOGIC ---
     salary_details = Salary.query.filter_by(user_id=current_user.id).first()
     if salary_details and salary_details.monthly_gross > 0:
         salary_credited_this_month = Transaction.query.filter(
             Transaction.user_id == current_user.id,
             Transaction.description == "Monthly Salary",
-            Transaction.date >= start_of_month
+            Transaction.date >= start_of_month,
+            Transaction.date < end_of_month
         ).first()
+
         if not salary_credited_this_month:
+            # FIX: Find or create the 'Salary' category object
+            salary_category = Category.query.filter_by(user_id=current_user.id, name='Salary').first()
+            if not salary_category:
+                salary_category = Category(name='Salary', type='income', user_id=current_user.id)
+                db.session.add(salary_category)
+                db.session.commit()
+
             salary_transaction = Transaction(
                 description="Monthly Salary",
                 amount=salary_details.monthly_gross,
                 type="income",
-                category="Salary",
+                category_id=salary_category.id, # CORRECT: Use the category's ID
                 date=start_of_month,
                 user_id=current_user.id
             )
@@ -583,25 +573,36 @@ def dashboard():
             db.session.commit()
             flash(f"Auto-credited salary of ₹{salary_details.monthly_gross} for this month.", "info")
 
+    # --- EMI AUTO-DEBIT LOGIC ---
     user_loans = Loan.query.filter_by(user_id=current_user.id).all()
-    for loan in user_loans:
-        emi_debited = Transaction.query.filter(
-            Transaction.user_id == current_user.id,
-            Transaction.description == f"EMI for {loan.loan_name}",
-            Transaction.date >= start_of_month
-        ).first()
-        
-        loan_end_date = loan.start_date + relativedelta(months=+loan.tenure_months)
-        if not emi_debited and today <= loan_end_date:
-            db.session.add(Transaction(
-                description=f"EMI for {loan.loan_name}",
-                amount=loan.emi_amount,
-                type="expense",
-                category="EMI",
-                date=start_of_month,
-                user_id=current_user.id))
+    if user_loans:
+        # FIX: Find or create the 'EMI' category object once before the loop
+        emi_category = Category.query.filter_by(user_id=current_user.id, name='EMI').first()
+        if not emi_category:
+            emi_category = Category(name='EMI', type='expense', user_id=current_user.id)
+            db.session.add(emi_category)
             db.session.commit()
-            flash(f"Auto-debited EMI of ₹{loan.emi_amount} for {loan.loan_name}.", "info")
+
+        for loan in user_loans:
+            emi_debited = Transaction.query.filter(
+                Transaction.user_id == current_user.id,
+                Transaction.description == f"EMI for {loan.loan_name}",
+                Transaction.date >= start_of_month,
+                Transaction.date < end_of_month
+            ).first()
+            
+            loan_end_date = loan.start_date + relativedelta(months=+loan.tenure_months)
+            if not emi_debited and today <= loan_end_date:
+                db.session.add(Transaction(
+                    description=f"EMI for {loan.loan_name}",
+                    amount=loan.emi_amount,
+                    type="expense",
+                    category_id=emi_category.id, # CORRECT: Use the category's ID
+                    date=start_of_month,
+                    user_id=current_user.id
+                ))
+                db.session.commit()
+                flash(f"Auto-debited EMI of ₹{loan.emi_amount} for {loan.loan_name}.", "info")
 
     # --- YOUR EXISTING ANOMALY DETECTION LOGIC (UNCHANGED) ---
     all_expenses = Transaction.query.filter_by(user_id=current_user.id, type='expense').all()
@@ -609,14 +610,16 @@ def dashboard():
         df = pd.DataFrame([(t.amount, t.description) for t in all_expenses], columns=['amount', 'description'])
         model = IsolationForest(contamination=0.05) 
         df['anomaly'] = model.fit_predict(df[['amount']])
-        last_transaction = all_expenses[-1]
-        if df.iloc[-1]['anomaly'] == -1:
-             flash(f"Unusual spending detected: ₹{last_transaction.amount} for '{last_transaction.description}'. Please review.", "warning")
+        if not df.empty:
+            last_transaction = all_expenses[-1]
+            if df.iloc[-1]['anomaly'] == -1:
+                 flash(f"Unusual spending detected: ₹{last_transaction.amount} for '{last_transaction.description}'. Please review.", "warning")
 
     # --- YOUR EXISTING MONTHLY TOTALS LOGIC (UNCHANGED) ---
     monthly_transactions = Transaction.query.filter(
         Transaction.user_id == current_user.id,
-        Transaction.date >= start_of_month).all()
+        Transaction.date >= start_of_month,
+        Transaction.date < end_of_month).all()
     monthly_income = sum(t.amount for t in monthly_transactions if t.type == 'income')
     monthly_expense = sum(t.amount for t in monthly_transactions if t.type == 'expense')
     
@@ -628,7 +631,7 @@ def dashboard():
 
     chart_data = {'labels': ['Monthly Income', 'Monthly Expense'], 'data': [monthly_income, monthly_expense]}
 
-    # --- NEW BUDGET CALCULATION LOGIC ---
+    # --- YOUR EXISTING BUDGET CALCULATION LOGIC (UNCHANGED) ---
     current_month_num = datetime.utcnow().month
     current_year = datetime.utcnow().year
 
@@ -638,7 +641,6 @@ def dashboard():
         Budget.year == current_year
     ).scalar() or 0.0
     
-    # We can reuse your monthly_expense calculation
     total_spent_this_month = monthly_expense
 
     budget_summary = {
@@ -646,9 +648,7 @@ def dashboard():
         'total_spent': total_spent_this_month,
         'percentage_spent': int((total_spent_this_month / total_budgeted) * 100) if total_budgeted > 0 else 0
     }
-    # --- END OF NEW BUDGET LOGIC ---
     
-    # Add budget_summary to the return statement
     return render_template('dashboard.html', 
                            user=current_user, 
                            balance=balance, 
@@ -656,7 +656,7 @@ def dashboard():
                            monthly_expense=monthly_expense, 
                            recent_transactions=recent_transactions,
                            chart_data=chart_data,
-                           budget_summary=budget_summary) # <-- Added this
+                           budget_summary=budget_summary)
 
 
 @app.route('/business_dashboard')
@@ -669,10 +669,12 @@ def business_dashboard():
     # --- YOUR EXISTING BUSINESS LOGIC (UNCHANGED) ---
     today = date.today()
     start_of_month = today.replace(day=1)
+    end_of_month = start_of_month + relativedelta(months=1)
 
     transactions_this_month = BusinessTransaction.query.filter(
         BusinessTransaction.user_id == current_user.id,
-        BusinessTransaction.date >= start_of_month
+        BusinessTransaction.date >= start_of_month,
+        BusinessTransaction.date < end_of_month
     ).all()
     
     monthly_revenue = sum(t.amount for t in transactions_this_month if t.type == 'revenue')
@@ -859,9 +861,12 @@ def business_transactions():
     categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name).all()
 
     if not categories:
-        default_categories = ['Client Revenue', 'Supplies', 'Rent', 'Utilities', 'Marketing', 'Other']
-        for cat_name in default_categories:
-            db.session.add(Category(name=cat_name, user_id=current_user.id))
+        default_categories = [
+            ('Client Revenue', 'income'), ('Supplies', 'expense'), ('Rent', 'expense'),
+            ('Utilities', 'expense'), ('Marketing', 'expense'), ('Other', 'expense')
+        ]
+        for cat_name, cat_type in default_categories:
+            db.session.add(Category(name=cat_name, type=cat_type, user_id=current_user.id))
         db.session.commit()
         categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name).all()
         flash('Some default business categories have been created for you. You can manage them in the Categories page.', 'info')
@@ -890,10 +895,12 @@ def business_financials():
     # This route now calculates and displays data, no manual entry.
     today = date.today()
     start_of_month = today.replace(day=1)
+    end_of_month = start_of_month + relativedelta(months=1)
 
     transactions_this_month = BusinessTransaction.query.filter(
         BusinessTransaction.user_id == current_user.id,
-        BusinessTransaction.date >= start_of_month
+        BusinessTransaction.date >= start_of_month,
+        BusinessTransaction.date < end_of_month
     ).all()
 
     revenue = sum(t.amount for t in transactions_this_month if t.type == 'revenue')
@@ -1001,7 +1008,7 @@ def edit_business_transaction(transaction_id):
             trans.description = request.form.get('description')
             trans.amount = float(request.form.get('amount'))
             trans.type = request.form.get('type')
-            trans.category = request.form.get('category')
+            trans.category_id = request.form.get('category_id')
             trans.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
             if not trans.description or trans.amount <= 0:
                 flash('Valid description and positive amount are required.', 'danger')
@@ -1022,9 +1029,16 @@ def delete_business_transaction(transaction_id):
         # Add logic here to delete the associated receipt file if it exists
         if trans.receipt_filename:
             try:
-                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], trans.receipt_filename))
-            except OSError as e:
-                print(f"Error deleting file {trans.receipt_filename}: {e}")
+                # Receipt is stored on Cloudinary — extract public_id and delete
+                if 'cloudinary' in (trans.receipt_filename or ''):
+                    import cloudinary.uploader
+                    # Extract public_id from Cloudinary URL
+                    public_id = trans.receipt_filename.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+                    cloudinary.uploader.destroy(f"receipts/{trans.user_id}/{public_id}")
+                else:
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], trans.receipt_filename))
+            except Exception as e:
+                print(f"Error deleting receipt {trans.receipt_filename}: {e}")
 
         db.session.delete(trans)
         db.session.commit()
@@ -1171,46 +1185,46 @@ def predict_business_cashflow():
         if not transactions or len(transactions) < 2:
             return jsonify({"error": "Not enough data for a forecast."})
 
-        # Prepare DataFrame for Prophet
+        # Prepare DataFrame
         df = pd.DataFrame([{
             'date': t.date,
             'amount': t.amount if t.type == 'revenue' else -t.amount
         } for t in transactions])
-        
+
         # Group by date to get daily net cash flow
-        df_daily_net = df.groupby('date').sum().reset_index()
-        
-        # Prophet requires columns 'ds' (datestamp) and 'y' (value)
-        df_prophet = df_daily_net.rename(columns={"date": "ds", "amount": "y"})
-        
-        if len(df_prophet) < 2:
+        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        df = df.groupby('date').sum().reset_index().dropna(subset=['date'])
+
+        if len(df) < 2:
             return jsonify({"error": "Not enough distinct data points for a forecast."})
 
-        # Initialize and fit the Prophet model
-        model = Prophet(daily_seasonality=True)
-        model.fit(df_prophet)
+        # --- RandomForest Forecast (lightweight, free-tier compatible) ---
+        df['days'] = (df['date'] - df['date'].min()).dt.days
+        X = df[['days']]
+        y = df['amount']
+        rf = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf.fit(X, y)
 
-        # Create a future dataframe for the next 60 days
-        future = model.make_future_dataframe(periods=60)
-        forecast = model.predict(future)
-        
-        # Return the forecast data as JSON
-        # We only need the data from today onwards
-        today = pd.to_datetime(date.today())
-        future_forecast = forecast[forecast['ds'] >= today]
+        last_day = df['days'].max()
+        future_days_arr = np.arange(last_day + 1, last_day + 61).reshape(-1, 1)
+        future_predictions = rf.predict(future_days_arr).tolist()
+
+        # Generate future dates
+        base_date = df['date'].min()
+        future_dates = [(base_date + pd.Timedelta(days=int(d))).strftime('%Y-%m-%d')
+                        for d in np.arange(last_day + 1, last_day + 61)]
 
         response_data = {
-            'dates': future_forecast['ds'].dt.strftime('%Y-%m-%d').tolist(),
-            'predicted_flow': future_forecast['yhat'].tolist(),
-            'lower_bound': future_forecast['yhat_lower'].tolist(),
-            'upper_bound': future_forecast['yhat_upper'].tolist()
+            'dates': future_dates,
+            'predicted_flow': future_predictions,
+            'lower_bound': [v * 0.85 for v in future_predictions],
+            'upper_bound': [v * 1.15 for v in future_predictions]
         }
         return jsonify(response_data)
 
     except Exception as e:
-        # Return a generic error if anything goes wrong
         return jsonify({"error": f"An error occurred: {str(e)}"})
-    
+
     
 # --- BUSINESS REPORTING HELPERS ---
 
@@ -1335,9 +1349,12 @@ def add_transaction():
     
     # Create some default categories if the user has none
     if not current_user.categories:
-        default_categories = ['Food', 'Transport', 'Utilities', 'Salary', 'Other']
-        for cat_name in default_categories:
-            db.session.add(Category(name=cat_name, user_id=current_user.id))
+        default_categories = [
+            ('Food', 'expense'), ('Transport', 'expense'), ('Utilities', 'expense'),
+            ('Salary', 'income'), ('Other', 'expense')
+        ]
+        for cat_name, cat_type in default_categories:
+            db.session.add(Category(name=cat_name, type=cat_type, user_id=current_user.id))
         db.session.commit()
 
     # If no category is selected, try to assign a default
@@ -1475,35 +1492,75 @@ def refresh_prices():
     user_investments = Investment.query.filter_by(user_id=current_user.id).all()
     refreshed_data = []
     cg = CoinGeckoAPI()
+    
+    # Set a default fallback exchange rate first
+    usd_to_inr_rate = 83.5 
     try:
+        # Fetch the latest USD to INR exchange rate from CoinGecko
         rates = cg.get_price(ids='tether', vs_currencies='inr')
-        usd_to_inr_rate = rates['tether']['inr']
+        if rates and 'tether' in rates and 'inr' in rates['tether']:
+            usd_to_inr_rate = rates['tether']['inr']
     except Exception as e:
-        print(f"Could not fetch exchange rate, falling back. Error: {e}")
-        usd_to_inr_rate = 83.5
+        print(f"Could not fetch exchange rate, using fallback rate of {usd_to_inr_rate}. Error: {e}")
+
     for investment in user_investments:
-        current_price_display = 0; total_value_inr = 0; profit_loss_display = 0
+        current_price_display = 0
+        total_value_inr = 0
+        profit_loss_display = 0
+        
         try:
             if investment.asset_type == 'Stock':
                 stock = yf.Ticker(investment.ticker_symbol)
                 todays_data = stock.history(period='1d')
                 if not todays_data.empty:
-                    current_price_display = todays_data['Close'][0]
+                    current_price_display = todays_data['Close'].iloc[-1]
                     total_value_inr = investment.quantity * current_price_display
                     investment_cost_inr = investment.purchase_price * investment.quantity
                     profit_loss_display = total_value_inr - investment_cost_inr
+            
+            # --- CORRECTED CRYPTO SECTION START ---
             elif investment.asset_type == 'Crypto':
-                price_data = cg.get_price(ids=investment.ticker_symbol, vs_currencies='usd')
-                if price_data and price_data.get(investment.ticker_symbol):
-                    current_price_display = price_data[investment.ticker_symbol].get('usd', 0)
-                    total_value_inr = (investment.quantity * current_price_display) * usd_to_inr_rate
-                    investment_cost_usd = investment.purchase_price * investment.quantity
+                crypto_id = get_coingecko_id(investment.ticker_symbol)
+                price_data = cg.get_price(ids=crypto_id, vs_currencies='usd')
+                if price_data and price_data.get(crypto_id):
+                    current_price_usd = price_data[crypto_id].get('usd', 0)
+                    
+                    # --- All final calculations are now consistently in INR ---
+                    
+                    # 1. Calculate the Total CURRENT Value in INR
+                    total_value_inr = (investment.quantity * current_price_usd) * usd_to_inr_rate
+
+                    # 2. Calculate the original Investment COST in INR
+                    investment_cost_inr = 0
                     if investment.purchase_currency == 'INR':
-                        investment_cost_usd /= usd_to_inr_rate
-                    profit_loss_display = (investment.quantity * current_price_display) - investment_cost_usd
+                        investment_cost_inr = investment.purchase_price * investment.quantity
+                    else:  # Assuming the purchase currency was 'USD'
+                        investment_cost_inr = (investment.purchase_price * investment.quantity) * usd_to_inr_rate
+
+                    # 3. Calculate the final Profit or Loss in INR
+                    profit_loss_display = total_value_inr - investment_cost_inr
+                    
+                    # We still display the current price in USD for user reference
+                    current_price_display = current_price_usd
+            # --- CORRECTED CRYPTO SECTION END ---
+
         except Exception as e:
             print(f"Could not fetch price for {investment.ticker_symbol}: {e}")
-        refreshed_data.append({'investment': {'id': investment.id, 'ticker_symbol': investment.ticker_symbol.upper(), 'asset_type': investment.asset_type, 'quantity': investment.quantity, 'purchase_price': investment.purchase_price, 'purchase_currency': investment.purchase_currency}, 'current_price_display': current_price_display, 'total_value_inr': total_value_inr, 'profit_loss_display': profit_loss_display})
+            
+        refreshed_data.append({
+            'investment': {
+                'id': investment.id,
+                'ticker_symbol': investment.ticker_symbol.upper(),
+                'asset_type': investment.asset_type,
+                'quantity': investment.quantity,
+                'purchase_price': investment.purchase_price,
+                'purchase_currency': investment.purchase_currency
+            },
+            'current_price_display': current_price_display,
+            'total_value_inr': total_value_inr,
+            'profit_loss_display': profit_loss_display
+        })
+        
     return jsonify({'data': refreshed_data, 'exchange_rate': usd_to_inr_rate})
 
 @app.route('/net_worth')
@@ -1531,11 +1588,12 @@ def net_worth():
                 stock = yf.Ticker(investment.ticker_symbol)
                 todays_data = stock.history(period='1d')
                 if not todays_data.empty:
-                    total_investments_value += investment.quantity * todays_data['Close'][0]
+                    total_investments_value += investment.quantity * todays_data['Close'].iloc[-1]
             elif investment.asset_type == 'Crypto':
-                price_data = cg.get_price(ids=investment.ticker_symbol, vs_currencies='usd')
-                if price_data and price_data.get(investment.ticker_symbol):
-                    current_price_usd = price_data[investment.ticker_symbol].get('usd', 0)
+                crypto_id = get_coingecko_id(investment.ticker_symbol)
+                price_data = cg.get_price(ids=crypto_id, vs_currencies='usd')
+                if price_data and price_data.get(crypto_id):
+                    current_price_usd = price_data[crypto_id].get('usd', 0)
                     total_investments_value += (investment.quantity * current_price_usd) * usd_to_inr_rate
         except Exception as e:
             print(f"Net Worth: Could not fetch price for {investment.ticker_symbol}: {e}")
@@ -1734,7 +1792,7 @@ def edit_transaction(transaction_id):
         transaction.description = request.form.get('description')
         transaction.amount = float(request.form.get('amount'))
         transaction.type = request.form.get('type')
-        transaction.category = request.form.get('category')
+        transaction.category_id = request.form.get('category_id')
         transaction.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
         db.session.commit()
         flash('Transaction updated successfully!', 'success')
@@ -2000,7 +2058,6 @@ def predict_balance():
         # Fetch user's transaction data
         transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.date.asc()).all()
 
-        # If no transactions, return empty prediction
         if not transactions:
             return jsonify({"prediction": [], "model": "No data available"})
 
@@ -2010,52 +2067,44 @@ def predict_balance():
             "balance": t.amount if t.type == 'income' else -t.amount
         } for t in transactions])
 
-        # Convert to datetime for consistency
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
-        df = df.groupby('date').sum().reset_index()  # daily balance sum
-
-        # Prophet requires columns ds (date) and y (value)
-        df_prophet = df.rename(columns={"date": "ds", "balance": "y"})
+        df = df.groupby('date').sum().reset_index().dropna(subset=['date'])
 
         prediction = []
-        used_model = ""
+        used_model = "Insufficient data"
 
-        # --- Try Prophet ---
-        try:
-            if len(df_prophet) >= 2:
-                model = Prophet()
-                model.fit(df_prophet)
-                future = model.make_future_dataframe(periods=30)
-                forecast = model.predict(future)
-                prediction = forecast['yhat'][-30:].tolist()
-                used_model = "Prophet"
-            else:
-                raise ValueError("Insufficient data for Prophet")
-
-        # --- Fallback: RandomForest ---
-        except Exception:
-            df['date'] = pd.to_datetime(df['date'], errors='coerce')
-            df = df.dropna(subset=['date'])
-
-            if len(df) >= 2:
-                df['days'] = (df['date'] - df['date'].min()).dt.days
-                X = df[['days']]
-                y = df['balance']
-                rf = RandomForestRegressor(n_estimators=100, random_state=42)
-                rf.fit(X, y)
-
-                future_days = np.arange(df['days'].max() + 1, df['days'].max() + 31).reshape(-1, 1)
-                prediction = rf.predict(future_days).tolist()
-                used_model = "RandomForest"
-            else:
-                prediction = []
-                used_model = "Insufficient data"
+        # --- RandomForest Forecast (lightweight, free-tier compatible) ---
+        if len(df) >= 2:
+            df['days'] = (df['date'] - df['date'].min()).dt.days
+            X = df[['days']]
+            y = df['balance']
+            rf = RandomForestRegressor(n_estimators=100, random_state=42)
+            rf.fit(X, y)
+            future_days = np.arange(df['days'].max() + 1, df['days'].max() + 31).reshape(-1, 1)
+            prediction = rf.predict(future_days).tolist()
+            used_model = "RandomForest"
 
         return jsonify({"prediction": prediction, "model": used_model})
 
     except Exception as e:
         return jsonify({"prediction": [], "model": f"Error: {str(e)}"})
 
+
+# --- SPA React Catch-All Route ---
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, 'dist', path)):
+        return send_from_directory(os.path.join(app.static_folder, 'dist'), path)
+    
+    if path.startswith('api/') or path in ['login', 'logout', 'register', 'healthz']:
+        return jsonify({'error': 'Not Found'}), 404
+        
+    index_path = os.path.join(app.static_folder, 'dist', 'index.html')
+    if os.path.exists(index_path):
+        return send_from_directory(os.path.join(app.static_folder, 'dist'), 'index.html')
+    else:
+        return "React Frontend is building... Please run 'npm run build' inside the 'frontend' folder, then refresh.", 200
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,5 +1,6 @@
-# Environment variables
+# Environment variables (NEVER commit .env with real secrets)
 .env
+!.env.example
 
 # Python virtual environment
 venv/
@@ -8,14 +9,34 @@ venv/
 # Python cache files
 __pycache__/
 *.pyc
+*.pyo
 
 # Saved Machine Learning Models
 *.pkl
 
 # VS Code & OS-specific files
 .vscode/
+.idea/
 .DS_Store
 tempCodeRunnerFile.py
+*.swp
 
 # Uploads folder
 uploads/
+
+# Docker
+docker-compose.override.yml
+
+# Fly.io state
+.fly/
+
+# Git backup
+.git_backup/
+test.py
+
+# Gemini IDE
+.gemini/
+
+# SQLite Databases & instance folder
+*.db
+instance/
