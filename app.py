@@ -2090,6 +2090,24 @@ def predict_balance():
         return jsonify({"prediction": [], "model": f"Error: {str(e)}"})
 
 
+# --- SPA React Redirect Handler ---
+@app.before_request
+def redirect_to_react():
+    # If the requested file actually exists in the React static folder, let Flask serve it
+    if request.path != "" and os.path.exists(os.path.join(app.static_folder, 'dist', request.path.lstrip('/'))):
+        return
+        
+    # If it is a GET request, accepts HTML, and is not an API call or uploads folder
+    if request.method == 'GET' and \
+       request.accept_mimetypes.accept_html and \
+       not request.path.startswith('/api/') and \
+       not request.path.startswith('/uploads/'):
+        
+        index_path = os.path.join(app.static_folder, 'dist', 'index.html')
+        if os.path.exists(index_path):
+            return send_from_directory(os.path.join(app.static_folder, 'dist'), 'index.html')
+
+
 # --- SPA React Catch-All Route ---
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
