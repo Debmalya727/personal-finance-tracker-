@@ -8,6 +8,8 @@ app_file: app.py
 app_port: 7860
 ---
 
+# See live at [!(https://personal-finance-tracker-wnnr.onrender.com)](https://personal-finance-tracker-wnnr.onrender.com)
+
 # 🤖 Fin-AI: An Intelligent Personal & Business Finance Manager
 
 **An advanced, dual-purpose financial management application built with a modern React SPA frontend and Flask backend, leveraging AI for intelligent data extraction and machine learning for proactive financial insights.**
