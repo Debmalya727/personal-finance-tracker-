@@ -18,6 +18,7 @@ cloudinary
 
 # Database & Connectivity
 psycopg2-binary
+pymysql
 requests
 
 # Other Utilities
