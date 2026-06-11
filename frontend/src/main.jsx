@@ -11,10 +11,13 @@ window.fetch = async (url, options = {}) => {
     const match = document.cookie.match(/csrf_token=([^;]+)/);
     const csrfToken = match ? decodeURIComponent(match[1]) : null;
     if (csrfToken) {
-      options.headers = {
-        ...options.headers,
-        'X-CSRFToken': csrfToken
-      };
+      let headers = options.headers || {};
+      if (headers instanceof Headers) {
+        headers.set('X-CSRFToken', csrfToken);
+      } else {
+        headers = { ...headers, 'X-CSRFToken': csrfToken };
+      }
+      options.headers = headers;
     }
   }
   return originalFetch(url, options);

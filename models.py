@@ -143,9 +143,13 @@ class BusinessTransaction(db.Model):
     date = db.Column(db.Date, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     receipt_filename = db.Column(db.String(255), nullable=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('business_client.id'), nullable=True)
+    invoice_status = db.Column(db.String(20), nullable=True, default='paid')
+    due_date = db.Column(db.Date, nullable=True)
 
     # Explicitly link back to the 'business_transactions' property in the Category model
     category = db.relationship('Category', back_populates='business_transactions')
+    client = db.relationship('BusinessClient', backref=db.backref('business_transactions', lazy=True))
 
 class BusinessInvestment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -200,3 +204,7 @@ class BusinessClient(db.Model):
     project = db.Column(db.String(150))
     revenue_contribution = db.Column(db.Float)
     status = db.Column(db.String(50))
+    name = db.Column(db.String(100), nullable=True)
+    email = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    company = db.Column(db.String(100), nullable=True)
