@@ -8,7 +8,7 @@ app_file: app.py
 app_port: 7860
 ---
 
-# See live at [!(https://personal-finance-tracker-wnnr.onrender.com)](https://personal-finance-tracker-wnnr.onrender.com)
+# See live at [personal-finance-tracker-wnnr.onrender.com](https://personal-finance-tracker-wnnr.onrender.com)
 
 # 🤖 Fin-AI: An Intelligent Personal & Business Finance Manager
 
